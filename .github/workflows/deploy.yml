@@ -5,7 +5,6 @@ on:
     branches:
       - main
 
-      
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -34,6 +33,7 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ec2-user
           key: ${{ secrets.EC2_KEY }}
+          port: 22
           script: |
             docker pull ${{ secrets.DOCKER_USERNAME }}/coursevita_backend:latest
             docker stop coursevita_backend || true

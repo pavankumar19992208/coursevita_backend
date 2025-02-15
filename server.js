@@ -4,7 +4,7 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const bcrypt = require('bcryptjs');
-const promClient = require('prom-client');
+const { register, httpRequestDurationMicroseconds } = require('./metrics');
 
 dotenv.config();
 
@@ -26,18 +26,7 @@ bcrypt.setRandomFallback((len) => {
   return buf.map(() => Math.floor(Math.random() * 256));
 });
 
-// Prometheus metrics
-const register = new promClient.Registry();
-promClient.collectDefaultMetrics({ register });
-
-const httpRequestDurationMicroseconds = new promClient.Histogram({
-  name: 'http_request_duration_ms',
-  help: 'Duration of HTTP requests in ms',
-  labelNames: ['method', 'route', 'code'],
-  buckets: [50, 100, 200, 300, 400, 500, 750, 1000, 2000, 5000]
-});
-register.registerMetric(httpRequestDurationMicroseconds);
-
+// Middleware to measure request duration
 app.use((req, res, next) => {
   const end = httpRequestDurationMicroseconds.startTimer();
   res.on('finish', () => {

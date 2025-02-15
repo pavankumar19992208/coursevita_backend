@@ -35,11 +35,7 @@ jobs:
           key: ${{ secrets.EC2_KEY }}
           port: 22
           script: |
-            cd coursevita_backend
-            docker-compose down
-            docker-compose pull
-            docker-compose up -d
             docker pull ${{ secrets.DOCKER_USERNAME }}/coursevita_backend:latest
             docker stop coursevita_backend || true
             docker rm coursevita_backend || true
-            docker run -d --network="host" --name coursevita_backend ${{ secrets.DOCKER_USERNAME }}/coursevita_backend:latest
+            docker run -d -p 80:8080 --name coursevita_backend ${{ secrets.DOCKER_USERNAME }}/coursevita_backend:latest

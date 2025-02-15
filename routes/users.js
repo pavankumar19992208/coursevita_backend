@@ -1,8 +1,19 @@
+
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const { httpRequestDurationMicroseconds } = require('../metrics');
+
+// Middleware to measure request duration
+router.use((req, res, next) => {
+  const end = httpRequestDurationMicroseconds.startTimer();
+  res.on('finish', () => {
+    end({ method: req.method, route: req.route ? req.route.path : '', code: res.statusCode });
+  });
+  next();
+});
 
 // Register
 router.post('/register', async (req, res) => {

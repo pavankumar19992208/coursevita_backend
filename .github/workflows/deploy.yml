@@ -31,7 +31,7 @@ jobs:
           docker build -t ${{ secrets.DOCKER_USERNAME }}/coursevita_backend:latest .
           docker push ${{ secrets.DOCKER_USERNAME }}/coursevita_backend:latest
 
-      # Step 5: SSH into the EC2 instance and deploy the Docker container
+      # Step 5: SSH into the EC2 instance and deploy the Docker containers
       - name: SSH into EC2 and deploy
         uses: appleboy/ssh-action@v0.1.5
         with:
@@ -41,32 +41,32 @@ jobs:
           port: 22                        # Default SSH port
           script: |
             # Navigate to project directory
-            cd coursevita_backend
+            cd /home/ec2-user/coursevita_backend
 
             # Pull the latest code
             git pull origin main
 
-            # Install Docker Compose if not exists
-            if ! [ -x "$(command -v docker-compose)" ]; then
-              sudo yum install -y libcrypt-compat
-              sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-              sudo chmod +x /usr/local/bin/docker-compose
-            fi
-            docker-compose --version
-
-            # Install missing dependency
-            sudo yum install -y libcrypt
-
-            # Pull the latest Docker image
+            # Pull the latest Docker images
             docker pull ${{ secrets.DOCKER_USERNAME }}/coursevita_backend:latest
+            docker pull prom/prometheus:latest
+            docker pull grafana/grafana:latest
 
-            # Stop and remove the existing container
+            # Stop and remove the existing containers
             docker stop coursevita_backend || true
             docker rm coursevita_backend || true
+            docker stop prometheus || true
+            docker rm prometheus || true
+            docker stop grafana || true
+            docker rm grafana || true
 
-            # Start the Docker Compose services
-            docker-compose down
-            docker-compose up -d
+            # Run the backend container
+            docker run -d -p 80:8080 --name coursevita_backend ${{ secrets.DOCKER_USERNAME }}/coursevita_backend:latest
+
+            # Run the Prometheus container
+            docker run -d -p 9090:9090 --name prometheus -v /home/ec2-user/coursevita_backend/prometheus.yml:/etc/prometheus/prometheus.yml prom/prometheus:latest
+
+            # Run the Grafana container
+            docker run -d -p 3000:3000 --name grafana -e "GF_SECURITY_ADMIN_PASSWORD=admin" -v grafana-storage:/var/lib/grafana grafana/grafana:latest
 
       # Step 6: Output instance URL
       - name: Output instance URL

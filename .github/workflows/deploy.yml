@@ -6,7 +6,7 @@ on:
       - main
 
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
@@ -35,7 +35,34 @@ jobs:
           key: ${{ secrets.EC2_KEY }}
           port: 22
           script: |
+            # Navigate to project directory
+            cd /home/ec2-user/coursevita_backend
+
+            # Pull the latest code
+            git pull origin main
+
+            # Install Docker Compose if not exists
+            if ! [ -x "$(command -v docker-compose)" ]; then
+              sudo yum install -y libcrypt-compat
+              sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+              sudo chmod +x /usr/local/bin/docker-compose
+            fi
+            docker-compose --version
+
+            # Install missing dependency
+            sudo yum install -y libcrypt
+
+            # Pull the latest Docker image
             docker pull ${{ secrets.DOCKER_USERNAME }}/coursevita_backend:latest
+
+            # Stop and remove the existing container
             docker stop coursevita_backend || true
             docker rm coursevita_backend || true
-            docker run -d -p 80:8080 --name coursevita_backend ${{ secrets.DOCKER_USERNAME }}/coursevita_backend:latest
+
+            # Start the Docker Compose services
+            docker-compose down
+            docker-compose up -d
+
+      - name: Output instance URL
+        run: |
+          echo "Application is deployed and running at: http://${{ secrets.EC2_HOST }}"

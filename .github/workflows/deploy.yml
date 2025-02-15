@@ -41,7 +41,7 @@ jobs:
           port: 22                        # Default SSH port
           script: |
             # Navigate to project directory
-            cd /home/ec2-user/coursevita_backend
+            cd coursevita_backend
 
             # Pull the latest code
             git pull origin main
